@@ -1,12 +1,9 @@
-import { Suspense } from "react"
 import { createClient } from "@/lib/supabase-server"
-import { BentoGrid } from "@/components/BentoGrid"
-import { HeroTile } from "@/components/HeroTile"
-import { ActivityTile } from "@/components/ActivityTile"
 import { CourseGrid } from "@/components/CourseGrid"
 import type { Course } from "@/lib/supabase"
+import { BookOpen } from "lucide-react"
 
-// Fallback mock data in case Supabase is not configured yet
+// Fallback mock data
 const mockCourses: Course[] = [
   { id: "1", title: "Full-Stack Development with MERN", description: "Build production-grade apps using MongoDB, Express, React & Node.", progress: 78, icon_name: "Code", instructor: "Priya Sharma", duration: "42 hours", students: 12450, created_at: new Date().toISOString() },
   { id: "2", title: "Data Science & ML with Python", description: "Master pandas, scikit-learn, TensorFlow and real-world datasets.", progress: 45, icon_name: "Brain", instructor: "Arjun Mehta", duration: "56 hours", students: 9820, created_at: new Date().toISOString() },
@@ -16,22 +13,20 @@ const mockCourses: Course[] = [
   { id: "6", title: "Mobile App Dev with Flutter", description: "Build cross-platform apps for Android & iOS.", progress: 17, icon_name: "Smartphone", instructor: "Rohan Gupta", duration: "46 hours", students: 8910, created_at: new Date().toISOString() },
 ]
 
-// Check if Supabase is properly configured
 function isSupabaseConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !key) return false
   try {
     new URL(url)
-    return key.length > 20 // anon keys are long JWTs
+    return key.length > 20
   } catch {
     return false
   }
 }
 
-export default async function DashboardPage() {
+export default async function CoursesPage() {
   let courses = mockCourses
-  let usingMockData = true
 
   if (isSupabaseConfigured()) {
     try {
@@ -41,54 +36,29 @@ export default async function DashboardPage() {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.warn("Supabase fetch failed, falling back to mock data:", error.message)
-      } else if (data && data.length > 0) {
+      if (!error && data && data.length > 0) {
         courses = data as Course[]
-        usingMockData = false
       }
-    } catch (err) {
-      console.warn("Supabase connection failed, falling back to mock data")
+    } catch {
+      // fallback to mock
     }
-  } else {
-    console.info("Supabase not configured — using mock data. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local")
   }
 
   return (
     <div className="p-4 md:p-6 lg:p-8 pt-20 md:pt-8 w-full max-w-7xl mx-auto">
-      <header className="mb-8 flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Dashboard</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {usingMockData && (
-            <div className="hidden sm:flex h-8 items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3">
-              <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-xs text-amber-500 font-medium">Mock Data Mode</span>
-            </div>
-          )}
-          <div className="flex h-10 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4">
-            <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-            <span className="text-sm font-medium text-slate-300">Online</span>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-lg border border-white/20 cursor-pointer hover:scale-105 transition-transform">
-            S
-          </div>
-        </div>
+      <header className="mb-8">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <BookOpen size={24} className="text-indigo-400" />
+          My Courses
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {courses.length} courses enrolled
+        </p>
       </header>
 
-      <BentoGrid>
-        <HeroTile />
-        <ActivityTile />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <CourseGrid courses={courses} />
-      </BentoGrid>
+      </div>
     </div>
   )
 }
