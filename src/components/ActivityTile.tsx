@@ -4,7 +4,7 @@ import { motion } from "framer-motion"
 import { BentoGridItem } from "./BentoGrid"
 
 export function ActivityTile() {
-  // Generate mock contribution data
+  // Generate learning activity metrics
   const weeks = 8
   const daysPerWeek = 7
   

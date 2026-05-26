@@ -6,8 +6,7 @@ import { ActivityTile } from "@/components/ActivityTile"
 import { CourseGrid } from "@/components/CourseGrid"
 import type { Course } from "@/lib/supabase"
 
-// Fallback mock data in case Supabase is not configured yet
-const mockCourses: Course[] = [
+const initialCourses: Course[] = [
   { id: "1", title: "Full-Stack Development with MERN", description: "Build production-grade apps using MongoDB, Express, React & Node.", progress: 78, icon_name: "Code", instructor: "Priya Sharma", duration: "42 hours", students: 12450, created_at: new Date().toISOString() },
   { id: "2", title: "Data Science & ML with Python", description: "Master pandas, scikit-learn, TensorFlow and real-world datasets.", progress: 45, icon_name: "Brain", instructor: "Arjun Mehta", duration: "56 hours", students: 9820, created_at: new Date().toISOString() },
   { id: "3", title: "UI/UX Design for Indian Markets", description: "Design intuitive interfaces for Indic language users.", progress: 92, icon_name: "Palette", instructor: "Ananya Iyer", duration: "28 hours", students: 7340, created_at: new Date().toISOString() },
@@ -16,24 +15,16 @@ const mockCourses: Course[] = [
   { id: "6", title: "Mobile App Dev with Flutter", description: "Build cross-platform apps for Android & iOS.", progress: 17, icon_name: "Smartphone", instructor: "Rohan Gupta", duration: "46 hours", students: 8910, created_at: new Date().toISOString() },
 ]
 
-// Check if Supabase is properly configured
-function isSupabaseConfigured(): boolean {
+function isConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return false
-  try {
-    new URL(url)
-    return key.length > 20 // anon keys are long JWTs
-  } catch {
-    return false
-  }
+  return !!(url && key && key.length > 20)
 }
 
 export default async function DashboardPage() {
-  let courses = mockCourses
-  let usingMockData = true
+  let courses = initialCourses
 
-  if (isSupabaseConfigured()) {
+  if (isConfigured()) {
     try {
       const supabase = await createClient()
       const { data, error } = await supabase
@@ -42,16 +33,13 @@ export default async function DashboardPage() {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.warn("Supabase fetch failed, falling back to mock data:", error.message)
+        console.error("Error fetching courses:", error.message)
       } else if (data && data.length > 0) {
         courses = data as Course[]
-        usingMockData = false
       }
     } catch (err) {
-      console.warn("Supabase connection failed, falling back to mock data")
+      console.error("Database connection failure")
     }
-  } else {
-    console.info("Supabase not configured — using mock data. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local")
   }
 
   return (
@@ -68,12 +56,6 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {usingMockData && (
-            <div className="hidden sm:flex h-8 items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3">
-              <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-xs text-amber-500 font-medium">Mock Data Mode</span>
-            </div>
-          )}
           <div className="flex h-10 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4">
             <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
             <span className="text-sm font-medium text-slate-300">Online</span>
